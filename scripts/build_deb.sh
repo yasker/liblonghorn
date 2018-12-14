@@ -10,4 +10,5 @@ cp -r LICENSE pkg/liblonghorn
 cp -r Makefile pkg/liblonghorn
 cp -r scripts/deb pkg/liblonghorn/debian
 cd pkg/liblonghorn/
+export DEB_BUILD_OPTIONS=nostrip
 debuild -us -uc
