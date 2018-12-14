@@ -1,5 +1,6 @@
 CC=gcc
 CFLAGS=-c -Wall -g -pg
+EXTRAFLAGS=-DHASH_FUNCTION=HASH_FNV
 LDFLAGS=
 OBJECTS=longhorn_rpc_client.o longhorn_rpc_protocol.o
 
@@ -25,12 +26,12 @@ $(OUTPUT_FILE): $(OBJECTS)
 longhorn_rpc_client.o: src/longhorn_rpc_client.c src/longhorn_rpc_client.h \
 	src/log.h src/longhorn_rpc_protocol.h \
 	src/uthash.h src/utlist.h
-	$(CC) $(CFLAGS) src/longhorn_rpc_client.c
+	$(CC) $(CFLAGS) $(EXTRAFLAGS) src/longhorn_rpc_client.c
 
 longhorn_rpc_protocol.o: src/longhorn_rpc_protocol.c src/log.h \
 	src/longhorn_rpc_protocol.h \
 	src/uthash.h src/utlist.h
-	$(CC) $(CFLAGS) src/longhorn_rpc_protocol.c
+	$(CC) $(CFLAGS) $(EXTRAFLAGS) src/longhorn_rpc_protocol.c
 
 clean:
 	rm -f $(OBJECTS) $(OUTPUT_FILE)
