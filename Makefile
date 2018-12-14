@@ -52,5 +52,5 @@ deb:
 	scripts/build_deb.sh
 
 cscope:
-	find -name '*.[ch]' > cscope.files
+	find -name '*.[ch]' |grep -v pkg > cscope.files
 	cscope -bq

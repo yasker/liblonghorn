@@ -64,8 +64,7 @@ void update_timeout_timer(struct lh_client_conn *conn) {
         }
 }
 
-void add_request_in_queue(struct lh_client_conn *conn, struct Message *req) {
-        pthread_mutex_lock(&conn->msg_mutex);
+void add_request_in_queue_nolock(struct lh_client_conn *conn, struct Message *req) {
         if (clock_gettime(CLOCK_MONOTONIC, &req->expiration) < 0) {
                 perror("Fail to get current time");
                 return;
@@ -76,8 +75,36 @@ void add_request_in_queue(struct lh_client_conn *conn, struct Message *req) {
         DL_APPEND(conn->msg_list, req);
 
         update_timeout_timer(conn);
+}
 
+void add_request_in_queue(struct lh_client_conn *conn, struct Message *req) {
+        pthread_mutex_lock(&conn->msg_mutex);
+        add_request_in_queue_nolock(conn, req);
         pthread_mutex_unlock(&conn->msg_mutex);
+}
+
+void hash_del(struct lh_client_conn *conn, struct Message *req) {
+        HASH_DEL(conn->msg_hashtable, req);
+}
+
+void dl_delete(struct lh_client_conn *conn, struct Message *req) {
+        DL_DELETE(conn->msg_list, req);
+}
+
+void remove_req(struct lh_client_conn *conn, struct Message *req) {
+        hash_del(conn, req);
+        dl_delete(conn, req);
+        update_timeout_timer(conn);
+}
+
+struct Message *find_and_remove_request_from_queue_nolock(struct lh_client_conn *conn,
+                int seq) {
+        struct Message *req = NULL;
+        HASH_FIND_INT(conn->msg_hashtable, &seq, req);
+        if (req != NULL) {
+                remove_req(conn, req);
+        }
+        return req;
 }
 
 struct Message *find_and_remove_request_from_queue(struct lh_client_conn *conn,
@@ -85,12 +112,7 @@ struct Message *find_and_remove_request_from_queue(struct lh_client_conn *conn,
         struct Message *req = NULL;
 
         pthread_mutex_lock(&conn->msg_mutex);
-        HASH_FIND_INT(conn->msg_hashtable, &seq, req);
-        if (req != NULL) {
-                HASH_DEL(conn->msg_hashtable, req);
-                DL_DELETE(conn->msg_list, req);
-                update_timeout_timer(conn);
-        }
+        req = find_and_remove_request_from_queue_nolock(conn, seq);
         pthread_mutex_unlock(&conn->msg_mutex);
         return req;
 }
